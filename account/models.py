@@ -134,7 +134,7 @@ class SignupCode(models.Model):
         pass
 
     code = models.CharField(_("code"), max_length=64, unique=True)
-    max_uses = models.PositiveIntegerField(_("max uses"), default=0)
+    max_uses = models.PositiveIntegerField(_("max uses"), default=1)
     expiry = models.DateTimeField(_("expiry"), null=True, blank=True)
     inviter = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
     email = models.EmailField(max_length=254, blank=True)
