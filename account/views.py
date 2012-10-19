@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from django.utils.decorators import method_decorator
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import redirect, get_object_or_404
 from django.utils.http import base36_to_int, int_to_base36
@@ -12,6 +13,7 @@ from django.contrib import auth, messages
 from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.decorators import login_required
 
 from account import signals
 from account.conf import settings
@@ -783,3 +785,7 @@ class DeleteView(LogoutView):
         ctx.update(kwargs)
         ctx["ACCOUNT_DELETION_EXPUNGE_HOURS"] = settings.ACCOUNT_DELETION_EXPUNGE_HOURS
         return ctx
+    
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        return super(DeleteView, self).dispatch(request, *args, **kwargs)
