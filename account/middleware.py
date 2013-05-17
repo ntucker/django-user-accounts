@@ -1,11 +1,15 @@
 from __future__ import unicode_literals
 
+import logging
+
 from django.utils import translation, timezone
 from django.utils.cache import patch_vary_headers
 
 from account.conf import settings
 from account.models import Account
 
+logger = logging.getLogger(__name__)
+TIMEZONE = getattr(settings, 'TIME_ZONE', "UTC")
 
 class LocaleMiddleware(object):
     """
@@ -48,6 +52,10 @@ class TimezoneMiddleware(object):
         except Account.DoesNotExist:
             pass
         else:
-            if account:
-                tz = settings.TIME_ZONE if not account.timezone else account.timezone
-                timezone.activate(tz)
+            if account and account.timezone:
+                try:
+                    timezone.activate(account.timezone)
+                except UnknownTimeZoneError as e:
+                    logger.warning(e)
+                    logger.warning("Resetting timezone to default")
+                    account.timezone = TIMEZONE
