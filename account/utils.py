@@ -9,6 +9,7 @@ except ImportError:  # python 2
 from django.core import urlresolvers
 from django.core.exceptions import SuspiciousOperation
 from django.http import HttpResponseRedirect, QueryDict
+from django.utils import six
 
 from django.contrib.auth import get_user_model
 
@@ -106,3 +107,10 @@ def get_form_data(form, field_name, default=None):
     else:
         key = field_name
     return form.data.get(key, default)
+
+
+def pk_to_base36(pk):
+    if isinstance(pk, six.integer_types):
+        return int_to_base36(pk)
+    else:
+        return str(pk).replace("-", "")

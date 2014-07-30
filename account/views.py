@@ -1,5 +1,8 @@
 from __future__ import unicode_literals
 
+import uuid
+
+from django.db import models
 from django.utils.decorators import method_decorator
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import redirect, get_object_or_404
@@ -23,7 +26,7 @@ from account.forms import SettingsForm
 from account.hooks import hookset
 from account.mixins import LoginRequiredMixin
 from account.models import SignupCode, EmailAddress, EmailConfirmation, Account, AccountDeletion
-from account.utils import default_redirect, get_form_data
+from account.utils import default_redirect, get_form_data, pk_to_base36
 
 
 class SignupView(FormView):
@@ -561,7 +564,7 @@ class PasswordResetView(FormView):
         current_site = get_current_site(self.request)
         email_qs = EmailAddress.objects.filter(email__iexact=email)
         for user in User.objects.filter(pk__in=email_qs.values("user")):
-            uid = int_to_base36(user.id)
+            uid = pk_to_base36(user.pk)
             token = self.make_token(user)
             password_reset_url = "{0}://{1}{2}".format(
                 protocol,
@@ -644,11 +647,15 @@ class PasswordResetTokenView(FormView):
         return default_redirect(self.request, fallback_url, **kwargs)
 
     def get_user(self):
+        User = get_user_model()
         try:
-            uid_int = base36_to_int(self.kwargs["uidb36"])
+            if type(User._meta.pk) == models.IntegerField or type(User._meta.pk) == models.AutoField:
+                uid = base36_to_int(self.kwargs["uidb36"])
+            else:
+                uid = uuid.UUID(self.kwargs["uidb36"])
         except ValueError:
             raise Http404()
-        return get_object_or_404(get_user_model(), id=uid_int)
+        return get_object_or_404(User, pk=uid)
 
     def check_token(self, user, token):
         return self.token_generator.check_token(user, token)
